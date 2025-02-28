@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download de Vídeos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Baixar Vídeos</h1>
+
+    <!-- Formulário para YouTube -->
+    <section>
+        <h2>Baixar do YouTube</h2>
+        <form action="/download/youtube" method="post">
+            <input type="text" name="url" placeholder="Cole a URL do YouTube aqui" required>
+            <label for="formato_youtube">Formato:</label>
+            <select name="formato" id="formato_youtube">
+                <option value="video">Vídeo</option>
+                <option value="mp3">MP3 (Apenas Áudio)</option>
+            </select>
+            <button type="submit">Baixar do YouTube</button>
+        </form>
+    </section>
+
+    <!-- Formulário para Facebook -->
+    <section>
+        <h2>Baixar do Facebook</h2>
+        <form action="/download/facebook" method="post">
+            <input type="text" name="url" placeholder="Cole a URL do Facebook aqui" required>
+            <label for="formato_facebook">Formato:</label>
+            <select name="formato" id="formato_facebook">
+                <option value="video">Vídeo</option>
+                <option value="mp3">MP3 (Apenas Áudio)</option>
+            </select>
+            <button type="submit">Baixar do Facebook</button>
+        </form>
+    </section>
+
+    <!-- Formulário para Instagram -->
+    <section>
+        <h2>Baixar do Instagram</h2>
+        <form action="/download/instagram" method="post">
+            <input type="text" name="url" placeholder="Cole a URL do Instagram aqui" required>
+            <label for="formato_instagram">Formato:</label>
+            <select name="formato" id="formato_instagram">
+                <option value="video">Vídeo</option>
+                <option value="mp3">MP3 (Apenas Áudio)</option>
+            </select>
+            <button type="submit">Baixar do Instagram</button>
+        </form>
+    </section>
+</body>
+</html>
