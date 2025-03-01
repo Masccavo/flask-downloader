@@ -5,8 +5,13 @@ import os
 app = Flask(__name__)
 DOWNLOAD_PATH = "downloads"
 
+# Criar pasta de downloads se não existir
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
+
+# Configurar FFmpeg portátil
+FFMPEG_PATH = os.path.abspath("ffmpeg")
+os.environ["PATH"] += os.pathsep + FFMPEG_PATH
 
 
 @app.route("/")
@@ -18,6 +23,7 @@ def baixar_video(url, formato, plataforma):
     try:
         ydl_opts = {
             "outtmpl": f"{DOWNLOAD_PATH}/%(title)s.%(ext)s",
+            "ffmpeg_location": FFMPEG_PATH,  # Informando o caminho do FFmpeg
         }
 
         if formato == "mp3":
