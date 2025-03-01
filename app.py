@@ -10,9 +10,10 @@ DOWNLOAD_PATH = "downloads"
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
 
-# Caminho do FFmpeg no Railway (caso precise indicar manualmente)
+# Caminho do FFmpeg no Railway
 FFMPEG_PATH = "/usr/bin/ffmpeg"
 FFPROBE_PATH = "/usr/bin/ffprobe"
+os.environ["PATH"] += os.pathsep + "/usr/bin"  # Garante que o FFmpeg está no PATH
 
 @app.route("/")
 def index():
@@ -24,34 +25,27 @@ def baixar_video(url, formato, plataforma):
         ydl_opts = {
             "outtmpl": f"{DOWNLOAD_PATH}/%(title)s.%(ext)s",
             "ffmpeg_location": FFMPEG_PATH,
-            "merge_output_format": "mp4" if formato == "mp4" else None,
+            "postprocessors": [],
         }
 
-        # Se for MP3, configurar conversão automática
+        # Configurar MP3
         if formato == "mp3":
-            ydl_opts.update({
-                "format": "bestaudio/best",
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192",
-                }]
+            ydl_opts["format"] = "bestaudio/best"
+            ydl_opts["postprocessors"].append({
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
             })
         else:
-            ydl_opts.update({
-                "format": "bestvideo+bestaudio/best" if plataforma == "YouTube" else "best",
-            })
+            ydl_opts["format"] = "bestvideo+bestaudio/best" if plataforma == "YouTube" else "best"
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
 
-        # Ajustar extensão se for MP3 e for Facebook ou Instagram
-        if formato == "mp3" and plataforma in ["Facebook", "Instagram"]:
-            mp3_filename = filename.rsplit(".", 1)[0] + ".mp3"
-            subprocess.run([FFMPEG_PATH, "-i", filename, "-vn", "-acodec", "libmp3lame", "-q:a", "2", mp3_filename])
-            os.remove(filename)  # Remove o arquivo original
-            filename = mp3_filename
+        # Ajustar extensão para MP3
+        if formato == "mp3":
+            filename = filename.rsplit(".", 1)[0] + ".mp3"
 
         return send_file(filename, as_attachment=True)
 
@@ -87,4 +81,5 @@ def download_instagram():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
