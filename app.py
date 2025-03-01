@@ -24,6 +24,7 @@ def baixar_video(url, formato, plataforma):
         ydl_opts = {
             "outtmpl": f"{DOWNLOAD_PATH}/%(title)s.%(ext)s",
             "ffmpeg_location": FFMPEG_PATH,
+            "cookiefile": "cookies.txt",  # <- Adiciona os cookies
             "postprocessors": [],
         }
 
