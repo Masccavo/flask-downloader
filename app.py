@@ -96,7 +96,7 @@ def download_instagram():
     formato = request.form.get("formato")
 
     if not url or "instagram.com" not in url:
-        return "Erro: URL inválida para Instagram!", 400
+        return "Erro: URL invalida para Instagram!", 400
 
     return baixar_video(url, formato, "Instagram")
 
