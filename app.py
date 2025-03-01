@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, send_file
 import yt_dlp
 import os
-import subprocess  # Importado para conversão manual de MP3
+import subprocess
 
 app = Flask(__name__)
 DOWNLOAD_PATH = "downloads"
@@ -10,13 +10,9 @@ DOWNLOAD_PATH = "downloads"
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
 
-# Configurar FFmpeg portátil
-FFMPEG_PATH = os.path.abspath("ffmpeg")
-os.environ["PATH"] += os.pathsep + FFMPEG_PATH
-
-# Caminho dos cookies (se existir)
-COOKIES_FILE = "cookies.txt"
-
+# Caminho do FFmpeg no Railway (caso precise indicar manualmente)
+FFMPEG_PATH = "/usr/bin/ffmpeg"
+FFPROBE_PATH = "/usr/bin/ffprobe"
 
 @app.route("/")
 def index():
@@ -28,14 +24,11 @@ def baixar_video(url, formato, plataforma):
         ydl_opts = {
             "outtmpl": f"{DOWNLOAD_PATH}/%(title)s.%(ext)s",
             "ffmpeg_location": FFMPEG_PATH,
+            "merge_output_format": "mp4" if formato == "mp4" else None,
         }
 
-        # Se os cookies existirem, adicionamos ao yt-dlp
-        if os.path.exists(COOKIES_FILE):
-            ydl_opts["cookiefile"] = COOKIES_FILE
-
-        # Configuração específica para MP3 no YouTube
-        if formato == "mp3" and plataforma == "YouTube":
+        # Se for MP3, configurar conversão automática
+        if formato == "mp3":
             ydl_opts.update({
                 "format": "bestaudio/best",
                 "postprocessors": [{
@@ -44,27 +37,24 @@ def baixar_video(url, formato, plataforma):
                     "preferredquality": "192",
                 }]
             })
-
         else:
             ydl_opts.update({
                 "format": "bestvideo+bestaudio/best" if plataforma == "YouTube" else "best",
             })
 
-        # Baixar o arquivo
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
 
-        # Se o formato for MP3 e não for YouTube, convertemos manualmente
+        # Ajustar extensão se for MP3 e for Facebook ou Instagram
         if formato == "mp3" and plataforma in ["Facebook", "Instagram"]:
             mp3_filename = filename.rsplit(".", 1)[0] + ".mp3"
-            subprocess.run([
-                "ffmpeg", "-i", filename, "-vn", "-acodec", "libmp3lame", "-q:a", "2", mp3_filename
-            ])
+            subprocess.run([FFMPEG_PATH, "-i", filename, "-vn", "-acodec", "libmp3lame", "-q:a", "2", mp3_filename])
             os.remove(filename)  # Remove o arquivo original
             filename = mp3_filename
 
         return send_file(filename, as_attachment=True)
+
     except Exception as e:
         return f"Erro ao baixar: {e}", 500
 
@@ -73,10 +63,8 @@ def baixar_video(url, formato, plataforma):
 def download_youtube():
     url = request.form.get("url")
     formato = request.form.get("formato")
-
     if not url or ("youtube.com" not in url and "youtu.be" not in url):
         return "Erro: URL inválida para YouTube!", 400
-
     return baixar_video(url, formato, "YouTube")
 
 
@@ -84,10 +72,8 @@ def download_youtube():
 def download_facebook():
     url = request.form.get("url")
     formato = request.form.get("formato")
-
     if not url or "facebook.com" not in url:
         return "Erro: URL inválida para Facebook!", 400
-
     return baixar_video(url, formato, "Facebook")
 
 
@@ -95,10 +81,8 @@ def download_facebook():
 def download_instagram():
     url = request.form.get("url")
     formato = request.form.get("formato")
-
     if not url or "instagram.com" not in url:
         return "Erro: URL inválida para Instagram!", 400
-
     return baixar_video(url, formato, "Instagram")
 
 
