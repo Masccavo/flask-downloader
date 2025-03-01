@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, send_file
 import yt_dlp
 import os
-import subprocess
 
 app = Flask(__name__)
 DOWNLOAD_PATH = "downloads"
@@ -10,10 +9,10 @@ DOWNLOAD_PATH = "downloads"
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
 
-# Caminho do FFmpeg no Railway
+# Caminho do FFmpeg no Render
 FFMPEG_PATH = "/usr/bin/ffmpeg"
-FFPROBE_PATH = "/usr/bin/ffprobe"
 os.environ["PATH"] += os.pathsep + "/usr/bin"  # Garante que o FFmpeg está no PATH
+
 
 @app.route("/")
 def index():
@@ -27,6 +26,10 @@ def baixar_video(url, formato, plataforma):
             "ffmpeg_location": FFMPEG_PATH,
             "postprocessors": [],
         }
+
+        # Se for YouTube, adiciona suporte a cookies
+        if plataforma == "YouTube":
+            ydl_opts["cookiefile"] = "cookies.txt"  # Usa o arquivo de cookies
 
         # Configurar MP3
         if formato == "mp3":
