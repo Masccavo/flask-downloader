@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, send_file
 import yt_dlp
 import os
+import subprocess  # Adicionamos para conversão manual do MP3
 
 app = Flask(__name__)
 DOWNLOAD_PATH = "downloads"
@@ -29,10 +30,11 @@ def baixar_video(url, formato, plataforma):
             "ffmpeg_location": FFMPEG_PATH,
         }
 
-        # Se o arquivo cookies.txt existir, adicionamos ao yt-dlp
+        # Se os cookies existirem, adicionamos ao yt-dlp
         if os.path.exists(COOKIES_FILE):
             ydl_opts["cookiefile"] = COOKIES_FILE
 
+        # Se for MP3, tentamos baixar o melhor áudio disponível
         if formato == "mp3":
             ydl_opts.update({
                 "format": "bestaudio/best",
@@ -52,9 +54,14 @@ def baixar_video(url, formato, plataforma):
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
 
-        # Ajustar extensão se for MP3
-        if formato == "mp3":
-            filename = filename.rsplit(".", 1)[0] + ".mp3"
+        # Se for MP3 e não tiver sido convertido, convertemos manualmente
+        if formato == "mp3" and not filename.endswith(".mp3"):
+            mp3_filename = filename.rsplit(".", 1)[0] + ".mp3"
+            subprocess.run([
+                "ffmpeg", "-i", filename, "-vn", "-acodec", "libmp3lame", "-q:a", "2", mp3_filename
+            ])
+            os.remove(filename)  # Remove o arquivo original
+            filename = mp3_filename
 
         return send_file(filename, as_attachment=True)
     except Exception as e:
