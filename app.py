@@ -13,6 +13,9 @@ if not os.path.exists(DOWNLOAD_PATH):
 FFMPEG_PATH = os.path.abspath("ffmpeg")
 os.environ["PATH"] += os.pathsep + FFMPEG_PATH
 
+# Caminho dos cookies (se existir)
+COOKIES_FILE = "cookies.txt"
+
 
 @app.route("/")
 def index():
@@ -23,8 +26,12 @@ def baixar_video(url, formato, plataforma):
     try:
         ydl_opts = {
             "outtmpl": f"{DOWNLOAD_PATH}/%(title)s.%(ext)s",
-            "ffmpeg_location": FFMPEG_PATH,  # Informando o caminho do FFmpeg
+            "ffmpeg_location": FFMPEG_PATH,
         }
+
+        # Se o arquivo cookies.txt existir, adicionamos ao yt-dlp
+        if os.path.exists(COOKIES_FILE):
+            ydl_opts["cookiefile"] = COOKIES_FILE
 
         if formato == "mp3":
             ydl_opts.update({
@@ -59,7 +66,7 @@ def download_youtube():
     url = request.form.get("url")
     formato = request.form.get("formato")
 
-    if not url or "youtube.com" not in url and "youtu.be" not in url:
+    if not url or ("youtube.com" not in url and "youtu.be" not in url):
         return "Erro: URL inválida para YouTube!", 400
 
     return baixar_video(url, formato, "YouTube")
