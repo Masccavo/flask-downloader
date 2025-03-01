@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, send_file
 import yt_dlp
 import os
-import subprocess  # Adicionamos para conversão manual do MP3
+import subprocess  # Importado para conversão manual de MP3
 
 app = Flask(__name__)
 DOWNLOAD_PATH = "downloads"
@@ -34,8 +34,8 @@ def baixar_video(url, formato, plataforma):
         if os.path.exists(COOKIES_FILE):
             ydl_opts["cookiefile"] = COOKIES_FILE
 
-        # Se for MP3, tentamos baixar o melhor áudio disponível
-        if formato == "mp3":
+        # Configuração específica para MP3 no YouTube
+        if formato == "mp3" and plataforma == "YouTube":
             ydl_opts.update({
                 "format": "bestaudio/best",
                 "postprocessors": [{
@@ -44,6 +44,7 @@ def baixar_video(url, formato, plataforma):
                     "preferredquality": "192",
                 }]
             })
+
         else:
             ydl_opts.update({
                 "format": "bestvideo+bestaudio/best" if plataforma == "YouTube" else "best",
@@ -54,8 +55,8 @@ def baixar_video(url, formato, plataforma):
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
 
-        # Se for MP3 e não tiver sido convertido, convertemos manualmente
-        if formato == "mp3" and not filename.endswith(".mp3"):
+        # Se o formato for MP3 e não for YouTube, convertemos manualmente
+        if formato == "mp3" and plataforma in ["Facebook", "Instagram"]:
             mp3_filename = filename.rsplit(".", 1)[0] + ".mp3"
             subprocess.run([
                 "ffmpeg", "-i", filename, "-vn", "-acodec", "libmp3lame", "-q:a", "2", mp3_filename
@@ -96,7 +97,7 @@ def download_instagram():
     formato = request.form.get("formato")
 
     if not url or "instagram.com" not in url:
-        return "Erro: URL invalida para Instagram!", 400
+        return "Erro: URL inválida para Instagram!", 400
 
     return baixar_video(url, formato, "Instagram")
 
